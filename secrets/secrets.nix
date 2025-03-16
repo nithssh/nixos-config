@@ -3,5 +3,6 @@ let
 in                              
 {                               
   "cloudflare_token.age".publicKeys = [ hostEcKey ];
+  "cf_cert_env_vars.age".publicKeys = [ hostEcKey ];
 }                               
 

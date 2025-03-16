@@ -6,7 +6,8 @@
 
 {
   imports =
-    [ # Include the results of the hardware scan.
+    [
+      # Include the results of the hardware scan.
       ./hardware-configuration.nix
       <agenix/modules/age.nix>
     ];
@@ -14,10 +15,6 @@
   # Use the systemd-boot EFI boot loader.
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
-#  boot.loader.efi.efiSysMountPoint = "/efi";
-#  boot.loader.systemd-boot.xbootldrMountPoint = "/boot";
-#  boot.supportedFilesystems = [ "vfat" ];
-#  boot.initrd.kernelModules = [ "vfat" ];
 
   networking.hostName = "cardinal";
   networking.networkmanager.enable = true;
@@ -121,7 +118,10 @@
     wget
     gnome-tweaks
     git
-    (pkgs.callPackage <agenix/pkgs/agenix.nix> {})
+    dig
+    htop
+    nixpkgs-fmt
+    (pkgs.callPackage <agenix/pkgs/agenix.nix> { })
   ];
 
   # Some programs need SUID wrappers, can be configured further or are
@@ -133,6 +133,52 @@
   # };
 
   virtualisation.docker.enable = true;
+
+  ### Networked Services - Begin ###
+
+  services.immich = {
+    enable = true;
+    settings.server.externalDomain = "https://pics.nithish.dev";
+    #host = "localhost";
+    #openFirewall = false;
+  };
+
+  users.users.immich.extraGroups = [ "video" "render" ];
+
+  # Reverse proxy
+
+  services.nginx = {
+    enable = true;
+
+    # If the requested vhost is not defined, the first listing was being served.
+    # Disabling that behaviour here. It
+    virtualHosts."_" = {
+      default = true;
+      rejectSSL = true; # !Useful in default server blocks to avoid serving the certificate for another vhost.
+
+      # Drop all requests
+      locations."/" = {
+        extraConfig = "return 444;";
+      };
+    };
+
+    virtualHosts."pics.nithish.dev" = {
+      forceSSL = true;
+      useACMEHost = "nithish.dev"; # Use wildcard cert
+      locations."/" = {
+        proxyPass = "http://${config.services.immich.host}:${toString config.services.immich.port}";
+        proxyWebsockets = true;
+        recommendedProxySettings = true;
+
+        extraConfig = ''
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $scheme;
+          client_max_body_size 1G;
+        '';
+      };
+    };
+  };
 
   services.openssh = {
     enable = true;
@@ -151,30 +197,49 @@
       # Upstream nameservers
       server = [ "1.1.1.1" "1.0.0.1" ];
 
-      # Records of intrest
-      address = [ "/cardinal.nithish.dev/192.168.0.32" "/cloud.nithish.dev/192.168.0.32" ];
+      # Records of intrest. If I need to host a subdomain of nithish.dev. in a diff host
+      # then the subdomains pointing to this host should be listed individually.
+      # dnsmasq will resolve all subdomains to have the IPs of the parent domain.
+      address = [ "/nithish.dev/192.168.0.32" ];
     };
   };
 
   # Based on sample config at https://sourceforge.net/p/ddclient/code/HEAD/tree/trunk/sample-etc_ddclient.conf
   # See https://www.reddit.com/r/SelfHosting/comments/16wnu3s/ddclient_and_cloudflare_dynamic_dns/ for gotchas on
-  # token generation
+  # token generation. tl;dr: The token needs to have access to all zones of the account.
   services.ddclient = {
     enable = true;
     #verbose = true;
     protocol = "cloudflare";
-    zone ="nithish.dev";
+    zone = "nithish.dev";
     username = "nithssh@proton.me";
     passwordFile = config.age.secrets.cloudflare_token.path;
     domains = [ "cardinal.nithish.dev" ];
     usev6 = "";
   };
 
+  security.acme = {
+    acceptTerms = true;
+    defaults.email = "nithssh@proton.me";
+    certs = {
+      "nithish.dev" = {
+        domain = "*.nithish.dev";
+        group = "nginx";
+
+        # See https://go-acme.github.io/lego/dns/cloudflare/
+        dnsProvider = "cloudflare";
+        environmentFile = config.age.secrets.cf_cert_env_vars.path;
+      };
+    };
+  };
+
+  ### Networked Services - End ###
+
   # Open ports in the firewall.
-  networking.firewall.allowedTCPPorts = [ 53 ];
-  networking.firewall.allowedUDPPorts = [ 53 ];
+  networking.firewall.allowedTCPPorts = [ 53 443 ];
+  networking.firewall.allowedUDPPorts = [ 53 443 ];
   networking.hosts = {
-    "127.0.0.1" = ["localhost" "cardinal.nithish.dev" "cloud.nithish.dev"];
+    "127.0.0.1" = [ "localhost" "cardinal.nithish.dev" ];
   };
 
   # Copy the NixOS configuration file and link it from the resulting system
@@ -188,11 +253,12 @@
 
   age.secrets = {
     cloudflare_token.file = ./secrets/cloudflare_token.age;
+    cf_cert_env_vars.file = ./secrets/cf_cert_env_vars.age;
   };
 
   swapDevices = [{
     device = "/var/lib/swapfile";
-    size = 8*1024;
+    size = 8 * 1024;
   }];
 
   # This option defines the first version of NixOS you have installed on this particular machine,
