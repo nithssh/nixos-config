@@ -88,11 +88,12 @@
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.nithi = {
     isNormalUser = true;
-    extraGroups = [ "wheel" "gamemode" ];
+    extraGroups = [ "wheel" "gamemode" "scanner" "lp" ];
     packages = with pkgs; [
       tree
       discord
       obsidian
+      fractal
       tmux
       keepassxc
       gh
@@ -101,6 +102,10 @@
 
   programs.firefox.enable = true;
   programs.tmux.enable = true;
+  programs.neovim = {
+    enable = true;
+    defaultEditor = true;
+  };
   programs.steam = {
     enable = true;
     remotePlay.openFirewall = true;
@@ -111,12 +116,12 @@
   # List packages installed in system profile. To search, run:
   # $ nix search wget
   environment.systemPackages = with pkgs; [
-    neovim
     wget
     gnome-tweaks
     git
     dig
     htop
+    trash-cli
     nixpkgs-fmt
     (pkgs.callPackage <agenix/pkgs/agenix.nix> { })
   ];
@@ -299,6 +304,12 @@
     device = "/var/lib/swapfile";
     size = 8 * 1024;
   }];
+
+  hardware.sane = {
+    enable = true;
+    extraBackends = [ pkgs.hplipWithPlugin ];
+  };
+
 
   # This option defines the first version of NixOS you have installed on this particular machine,
   # and is used to maintain compatibility with application data (e.g. databases) created on older NixOS versions.
