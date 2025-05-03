@@ -117,6 +117,7 @@
   # $ nix search wget
   environment.systemPackages = with pkgs; [
     wget
+    vim # Just for the fallback cases
     gnome-tweaks
     git
     dig
@@ -125,6 +126,8 @@
     nixpkgs-fmt
     (pkgs.callPackage <agenix/pkgs/agenix.nix> { })
   ];
+
+  environment.variables = { EDITOR = "nvim"; };
 
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
