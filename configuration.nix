@@ -16,9 +16,6 @@
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
-  networking.hostName = "cardinal";
-  networking.networkmanager.enable = true;
-
   # Set your time zone.
   time.timeZone = "Asia/Kolkata";
 
@@ -132,7 +129,7 @@
   #   enableSSHSupport = true;
   # };
 
-  virtualisation.docker.enable = true;
+  #virtualisation.docker.enable = true;
 
   ### Networked Services - Begin ###
 
@@ -140,7 +137,7 @@
     enable = true;
     settings.server.externalDomain = "https://pics.nithish.dev";
     #host = "localhost";
-    #openFirewall = false;
+    #openFirewall = false; # Behind a reverse proxy
   };
 
   users.users.immich.extraGroups = [ "video" "render" ];
@@ -174,7 +171,7 @@
           proxy_set_header X-Real-IP $remote_addr;
           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
           proxy_set_header X-Forwarded-Proto $scheme;
-          client_max_body_size 1G;
+          client_max_body_size 10G;
         '';
       };
     };
@@ -236,11 +233,53 @@
   ### Networked Services - End ###
 
   # Open ports in the firewall.
-  networking.firewall.allowedTCPPorts = [ 53 443 ];
-  networking.firewall.allowedUDPPorts = [ 53 443 ];
-  networking.hosts = {
+  networking.firewall = {
+	# DNS, DNSoverTLS HTTPS
+  	allowedTCPPorts = [ 53 853 443 ];
+	allowedUDPPorts = [ 53 853 443 ];
+  };
+
+  networking.nftables.ruleset = let
+    geofenceDrv = import ./geofence.nix { inherit pkgs; };
+  in
+  ''
+    table inet ip_restriction {
+      set india_only {
+        type ipv4_addr
+	flags interval
+        elements = {  ${lib.readFile "${geofenceDrv}/india.zone"} }
+      }
+
+      chain input {
+        type filter hook input priority 10; policy drop;
+
+	# Allow incoming packets from existing connections.
+	ct state established,related accept
+	# Accept loopback connections
+	iifname "lo" accept comment "trusted interfaces"
+    
+        # Allow private IPv4 ranges (RFC 1918)
+	ip saddr 10.0.0.0/8 accept
+        ip saddr 172.16.0.0/12 accept
+        ip saddr 192.168.0.0/16 accept
+
+        ip saddr @india_only accept
+
+	tcp flags & (fin | syn | rst | ack) == syn log prefix "refused connection: " level info
+      }
+    }
+  '';
+
+  networking = {
+    hostName = "cardinal";
+    hosts = {
     "127.0.0.1" = [ "localhost" "cardinal.nithish.dev" ];
   };
+
+    networkmanager.enable = true;
+    nftables.enable = true; # Note: Normally incompatible with docker and libvirt
+  };
+
 
   # Copy the NixOS configuration file and link it from the resulting system
   # (/run/current-system/configuration.nix). This is useful in case you
