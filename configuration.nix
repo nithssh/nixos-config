@@ -153,6 +153,18 @@
     #openFirewall = false; # Behind a reverse proxy
   };
 
+  services.radicale = {
+    enable = true;
+    settings = {
+      server.hosts = [ "localhost:5232" ];
+      auth = {
+        type = "htpasswd";
+        htpasswd_filename = config.age.secrets.radicale_auth.path;
+        htpasswd_encryption = "bcrypt";
+      };
+    };
+  };
+
   users.users.immich.extraGroups = [ "video" "render" ];
 
   # Reverse proxy
@@ -185,6 +197,22 @@
           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
           proxy_set_header X-Forwarded-Proto $scheme;
           client_max_body_size 10G;
+        '';
+      };
+    };
+
+    virtualHosts."dav.nithish.dev" = {
+      forceSSL = true;
+      useACMEHost = "nithish.dev";
+      locations."/" = {
+        proxyPass = "http://${builtins.elemAt config.services.radicale.settings.server.hosts 0}";
+        recommendedProxySettings = true;
+
+        extraConfig = ''
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $scheme;
+          client_max_body_size 100M;
         '';
       };
     };
@@ -306,6 +334,12 @@
   age.secrets = {
     cloudflare_token.file = ./secrets/cloudflare_token.age;
     cf_cert_env_vars.file = ./secrets/cf_cert_env_vars.age;
+    radicale_auth = {
+      file = ./secrets/radicale_auth.age;
+      mode = "700";
+      owner = "radicale";
+      group = "radicale";
+    };
   };
 
   swapDevices = [{
