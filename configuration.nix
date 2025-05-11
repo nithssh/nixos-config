@@ -91,12 +91,15 @@
     extraGroups = [ "wheel" "gamemode" "scanner" "lp" ];
     packages = with pkgs; [
       tree
-      discord
-      obsidian
       fractal
       tmux
       keepassxc
       gh
+
+      # Unfree
+      discord
+      obsidian
+      spotify
     ];
   };
 
@@ -140,6 +143,8 @@
   #virtualisation.docker.enable = true;
 
   ### Networked Services - Begin ###
+
+  services.protonmail-bridge.enable = true;
 
   services.immich = {
     enable = true;
