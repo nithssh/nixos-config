@@ -344,10 +344,10 @@
     secondary_nvme_key.file = ./secrets/secondary_nvme_key.age;
   };
 
-  hardware.sane = {
-    enable = true;
-    extraBackends = [ pkgs.hplipWithPlugin ];
-  };
+#  hardware.sane = {
+#    enable = true;
+#    extraBackends = [ pkgs.hplipWithPlugin ];
+#  };
 
   nix.optimise = {
     automatic = true;
