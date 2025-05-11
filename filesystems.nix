@@ -20,12 +20,12 @@ in
     environment.etc.crypttab.text = ''
       secondary_nvme_crypt UUID=7a2d1004-d7c7-40b7-aed4-4818b7f4961a ${config.age.secrets.secondary_nvme_key.path}
     '';
-  
+
     swapDevices = [{
       device = "/var/lib/swapfile";
       size = 8 * 1024;
     }];
-  
+
     fileSystems."/mnt/external_nvme" = {
       device = "/dev/disk/by-uuid/68c3c87d-7176-4e74-abc0-6c050e886a45";
       fsType = "ext4";
@@ -37,8 +37,8 @@ in
         "relatime"
       ];
     };
-  
-     fileSystems."/mnt/secondary_nvme" = {
+
+    fileSystems."/mnt/secondary_nvme" = {
       # sudo cryptsetup luksAddKey /dev/nvme1n1p1 /run/agenix/secondary_nvme_key
       device = "/dev/mapper/secondary_nvme_crypt";
       fsType = "ext4";
@@ -58,14 +58,14 @@ in
         "x-gvfs-show"
       ];
     };
-  
+
     fileSystems."/mnt/bulk_shared" = {
       device = "/dev/disk/by-uuid/586518A25EA93E13";
       fsType = "ntfs-3g";
       options = ntfsOptions;
     };
 
-   fileSystems."/mnt/fast_shared" = {
+    fileSystems."/mnt/fast_shared" = {
       device = "/dev/disk/by-uuid/1E8C79ED8C79C037";
       fsType = "ntfs-3g";
       options = ntfsOptions;

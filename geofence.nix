@@ -6,7 +6,7 @@ pkgs.stdenv.mkDerivation {
     url = "https://www.ipdeny.com/ipblocks/data/countries/in.zone";
     sha256 = "1ip92ic6qvq6vnmij26fxw987xb2x3ykdzb00mkjm95mj2pyr38v";
   };
-  unpackPhase = "true";  # No need to unpack a plain text file
+  unpackPhase = "true"; # No need to unpack a plain text file
 
   buildPhase = ''
     echo "Processing IP block list..."
