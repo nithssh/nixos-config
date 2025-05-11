@@ -1,18 +1,3 @@
-#{ pkgs }:
-#
-#pkgs.stdenv.mkDerivation {
-#  name = "india-ipset";
-#  src = pkgs.fetchurl {
-#    url = "https://www.ipdeny.com/ipblocks/data/countries/in.zone";
-#    sha256 = "0w0qrhcy26b99pdmy9p2qs5yf22bsgx2l9yqqdwiczkapbipkxqy";  # On 19 Mar 2025
-#  };
-#  unpackPhase = "true";  # No need to unpack a plain text file
-#  installPhase = ''
-#    mkdir -p $out
-#    cp $src $out/india.zone
-#  '';
-#}
-
 { pkgs }:
 
 pkgs.stdenv.mkDerivation {
