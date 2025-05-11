@@ -9,6 +9,7 @@
     [
       # Include the results of the hardware scan.
       ./hardware-configuration.nix
+      ./filesystems.nix
       <agenix/modules/age.nix>
     ];
 
@@ -340,12 +341,8 @@
       owner = "radicale";
       group = "radicale";
     };
+    secondary_nvme_key.file = ./secrets/secondary_nvme_key.age;
   };
-
-  swapDevices = [{
-    device = "/var/lib/swapfile";
-    size = 8 * 1024;
-  }];
 
   hardware.sane = {
     enable = true;
