@@ -4,7 +4,7 @@ pkgs.stdenv.mkDerivation {
   name = "india-ipset";
   src = pkgs.fetchurl {
     url = "https://www.ipdeny.com/ipblocks/data/countries/in.zone";
-    sha256 = "3cce94ff20a10e26a4eacfb95df36b4a36186dec4ebed232277e8d560dc6f2a1";
+    sha256 = "1ip92ic6qvq6vnmij26fxw987xb2x3ykdzb00mkjm95mj2pyr38v";
   };
   unpackPhase = "true";  # No need to unpack a plain text file
 
