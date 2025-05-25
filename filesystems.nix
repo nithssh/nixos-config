@@ -35,6 +35,7 @@ in
         "nofail" # This is an external drive
         "noexec"
         "relatime"
+        "x-gvfs-show"
       ];
     };
 

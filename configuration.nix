@@ -96,6 +96,7 @@
       tmux
       keepassxc
       gh
+      tor-browser
 
       # Unfree
       discord
@@ -153,6 +154,7 @@
     #host = "localhost";
     #openFirewall = false; # Behind a reverse proxy
   };
+  users.users.immich.extraGroups = [ "video" "render" ];
 
   services.radicale = {
     enable = true;
@@ -166,7 +168,11 @@
     };
   };
 
-  users.users.immich.extraGroups = [ "video" "render" ];
+  services.readeck = {
+    enable = true;
+    environmentFile = config.age.secrets.readeck_env_vars.path;
+    settings.server.port = 9100;
+  };
 
   # Reverse proxy
 
@@ -214,6 +220,22 @@
           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
           proxy_set_header X-Forwarded-Proto $scheme;
           client_max_body_size 100M;
+        '';
+      };
+    };
+
+    virtualHosts."saves.nithish.dev" = {
+      forceSSL = true;
+      useACMEHost = "nithish.dev";
+      locations."/" = {
+        proxyPass = "http://localhost:${toString config.services.readeck.settings.server.port}";
+        recommendedProxySettings = true;
+
+        extraConfig = ''
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $scheme;
+          client_max_body_size 10M;
         '';
       };
     };
@@ -343,6 +365,7 @@
       group = "radicale";
     };
     secondary_nvme_key.file = ./secrets/secondary_nvme_key.age;
+    readeck_env_vars.file = ./secrets/readeck_env_vars.age;
   };
 
   #  hardware.sane = {

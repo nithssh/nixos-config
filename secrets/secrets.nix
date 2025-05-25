@@ -11,5 +11,7 @@ in
 
   # Contents: openssl rand -hex 512
   "secondary_nvme_key.age".publicKeys = [ hostEcKey ];
+
+  "readeck_env_vars.age".publicKeys = [ hostEcKey ];
 }                               
 
